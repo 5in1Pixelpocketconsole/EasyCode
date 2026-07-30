@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EasyCode — plain-English coding studio</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --panel:#ffffff; --ink:#1f2544; --muted:#6a7192;
+    --accent:#4b6ef5; --accent2:#7c4bf5; --ok:#25a06b; --warn:#e6663d; --line:#e3e7f2;
+    --stage-bg:#ffffff;
+  }
+  *{box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
+  html,body{height:100%;margin:0;}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;}
+  button{cursor:pointer;font-size:13px;border:none;border-radius:8px;padding:7px 12px;background:var(--accent);color:#fff;font-weight:600;}
+  button.ghost{background:#eef1fa;color:var(--ink);}
+  button.mini{padding:3px 7px;font-size:12px;border-radius:6px;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  input,select,textarea{font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;color:var(--ink);}
+  h1,h2,h3{margin:0;}
+  .hidden{display:none !important;}
+
+  /* AUTH */
+  #auth{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#4b6ef5,#7c4bf5);}
+  .card{background:#fff;border-radius:18px;padding:34px 32px;width:360px;box-shadow:0 18px 50px rgba(30,20,80,.35);}
+  .brand{font-size:30px;font-weight:800;letter-spacing:-.5px;
+    background:linear-gradient(90deg,#4b6ef5,#7c4bf5);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .brand small{display:block;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0;margin-top:2px;}
+  .card label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin:12px 0 4px;}
+  .card input{width:100%;}
+  .card .row{display:flex;gap:10px;margin-top:18px;}
+  .card .row button{flex:1;}
+  .tabs{display:flex;gap:6px;margin:18px 0 4px;background:#eef1fa;border-radius:10px;padding:4px;}
+  .tabs button{flex:1;background:transparent;color:var(--muted);}
+  .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  .err{color:var(--warn);font-size:12px;min-height:16px;margin-top:8px;font-weight:600;}
+  .authmode{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;}
+
+  /* APP */
+  #app{display:flex;flex-direction:column;height:100%;}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);}
+  header .brand{font-size:22px;}
+  header .who{margin-left:auto;font-size:13px;color:var(--muted);}
+  .main{flex:1;display:flex;min-height:0;}
+  .col{display:flex;flex-direction:column;min-height:0;}
+  .left{width:250px;border-right:1px solid var(--line);background:#fbfcff;overflow-y:auto;}
+  .center{flex:1;min-width:0;background:#eef1f8;}
+  .right{width:380px;border-left:1px solid var(--line);background:#fff;}
+  .section{padding:12px;border-bottom:1px solid var(--line);}
+  .section h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:6px;}
+
+  .chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;margin-top:6px;cursor:pointer;}
+  .chip.sel{outline:2px solid var(--accent);}
+  .chip img{width:36px;height:36px;object-fit:contain;background:
+     conic-gradient(#ddd 25%,#fff 0 50%,#ddd 0 75%,#fff 0) 0/12px 12px;border-radius:6px;}
+  .chip .nm{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .chip .tools{display:flex;gap:3px;}
+  .datachip{font-size:12px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 8px;margin-top:5px;display:flex;align-items:center;gap:6px;}
+  .datachip .k{font-weight:700;color:var(--accent2);}
+
+  /* STAGE */
+  #stageWrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  #stageScale{position:absolute;transform-origin:top left;}
+  #stage{position:relative;width:500px;height:600px;background:var(--stage-bg);border-radius:10px;
+    box-shadow:0 10px 30px rgba(30,20,80,.18);overflow:hidden;}
+  #backdropImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .origin{position:absolute;left:250px;top:300px;width:12px;height:12px;margin:-6px 0 0 -6px;
+    border-radius:50%;border:2px solid #c3c9de;pointer-events:none;}
+  .origin:before,.origin:after{content:'';position:absolute;background:#dfe3f0;}
+  .origin:before{left:-40px;top:5px;width:90px;height:1px;}
+  .origin:after{top:-40px;left:5px;height:90px;width:1px;}
+  .sprite{position:absolute;left:0;top:0;cursor:grab;user-select:none;will-change:transform;}
+  .sprite img{display:block;pointer-events:none;}
+  .bubble{position:absolute;left:0;top:0;background:#fff;border:1px solid #cfd5ea;border-radius:12px;
+    padding:5px 9px;font-size:12px;max-width:150px;box-shadow:0 3px 8px rgba(0,0,0,.12);pointer-events:none;transform:translate(0,-100%);}
+  .monitor{position:absolute;background:rgba(255,255,255,.92);border:1px solid #cfd5ea;border-radius:7px;
+    font-size:12px;padding:3px 7px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  .monitor .val{background:var(--accent);color:#fff;border-radius:5px;padding:1px 7px;margin-left:6px;}
+  #coordReadout{position:absolute;right:6px;bottom:6px;background:rgba(255,255,255,.9);border:1px solid #cfd5ea;
+    border-radius:6px;font-size:11px;padding:2px 8px;color:var(--muted);font-family:monospace;pointer-events:none;z-index:5;}
+  .axislabel{position:absolute;font-size:10px;color:#b9c0d6;font-family:monospace;pointer-events:none;}
+
+  /* EDITOR */
+  .right{display:flex;flex-direction:column;}
+  .codebar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fbfcff;}
+  .codebar .coding{font-weight:700;color:var(--accent2);}
+  .codebar .spacer{flex:1;}
+  #editor{flex:1;width:100%;border:none;border-radius:0;padding:12px 14px;resize:none;
+    font-family:'SFMono-Regular',Consolas,monospace;font-size:13.5px;line-height:1.55;outline:none;}
+  #console{height:120px;border-top:1px solid var(--line);background:#161a2b;color:#cdd3ee;
+    font-family:monospace;font-size:12px;padding:8px 12px;overflow-y:auto;white-space:pre-wrap;}
+  #console .e{color:#ff8f6b;}
+  #console .g{color:#7fe0a8;}
+
+  /* MODALS */
+  .modal{position:fixed;inset:0;background:rgba(20,22,45,.5);display:flex;align-items:center;justify-content:center;z-index:50;}
+  .modal .box{background:#fff;border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:92vh;overflow:auto;}
+  .modal h2{font-size:18px;margin-bottom:12px;}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .field{margin-top:10px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;}
+  .field input,.field select,.field textarea{width:100%;}
+
+  /* PAINT */
+  #paintBox{width:640px;}
+  .paintTools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;}
+  .swatch{width:22px;height:22px;border-radius:5px;border:2px solid #fff;box-shadow:0 0 0 1px #ccc;cursor:pointer;}
+  .swatch.on{outline:2px solid var(--ink);}
+  .paintTools .tool.on{background:var(--accent2);}
+  #paintCanvasWrap{background:conic-gradient(#e2e2e2 25%,#fff 0 50%,#e2e2e2 0 75%,#fff 0) 0/18px 18px;
+     border:1px solid var(--line);border-radius:8px;display:inline-block;}
+  #paintCanvas{display:block;cursor:crosshair;touch-action:none;}
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH ===================== -->
+<div id="auth">
+  <div class="card">
+    <div class="brand">EasyCode<small>plain-English coding studio</small></div>
+    <div class="tabs">
+      <button id="tabLogin" class="on" onclick="EC.showTab('login')">Log in</button>
+      <button id="tabSignup" onclick="EC.showTab('signup')">Sign up</button>
+    </div>
+    <label>Username</label>
+    <input id="au_user" autocomplete="off" placeholder="your username" />
+    <label>Password</label>
+    <input id="au_pass" type="password" placeholder="password" />
+    <div id="confirmWrap" class="hidden">
+      <label>Confirm password</label>
+      <input id="au_pass2" type="password" placeholder="re-type password" />
+    </div>
+    <div class="err" id="au_err"></div>
+    <div class="row">
+      <button id="au_go" onclick="EC.submitAuth()">Log in</button>
+    </div>
+    <div class="authmode" id="au_mode">Checking connection…</div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="brand">EasyCode</div>
+    <button class="ghost mini" onclick="EC.help()">Help / commands</button>
+    <div class="who">Signed in as <b id="whoName"></b> &nbsp; <button class="ghost mini" onclick="EC.logout()">Log out</button></div>
+  </header>
+  <div class="main">
+    <!-- LEFT -->
+    <div class="left col">
+      <div class="section">
+        <h3>Sprites</h3>
+        <div class="btnrow">
+          <button onclick="EC.openSpriteChooser()">+ Add a sprite</button>
+        </div>
+        <div id="spriteList"></div>
+      </div>
+      <div class="section">
+        <h3>Backdrop</h3>
+        <div class="btnrow">
+          <button class="ghost" onclick="EC.addBackdrop()">+ Add a backdrop</button>
+          <button class="ghost" onclick="EC.clearBackdrop()">Remove</button>
+        </div>
+      </div>
+      <div class="section">
+        <h3>Data</h3>
+        <div class="btnrow">
+          <button class="ghost" onclick="EC.makeVariable()">Make a variable</button>
+          <button class="ghost" onclick="EC.makeList()">Make a list</button>
+          <button class="ghost" onclick="EC.connectApi()">Connect an API</button>
+        </div>
+        <div id="dataList"></div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center col">
+      <div id="stageWrap">
+        <div id="stageScale">
+          <div id="stage">
+            <img id="backdropImg" class="hidden" />
+            <div class="origin"></div>
+            <div class="axislabel" style="left:253px;top:2px;">+y</div>
+            <div class="axislabel" style="left:253px;bottom:2px;">−y</div>
+            <div class="axislabel" style="right:4px;top:290px;">+x</div>
+            <div class="axislabel" style="left:4px;top:290px;">−x</div>
+            <div id="coordReadout">x: 0  y: 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right col">
+      <div class="codebar">
+        <span class="coding" id="codingLabel">Coding: —</span>
+        <span class="spacer"></span>
+        <button id="goBtn" onclick="EC.run()">▶ Go</button>
+        <button class="ghost" onclick="EC.stop()">■ Stop</button>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="Add a sprite, then write commands here.
+Example:
+when go clicked
+go to x 0 y 0
+point in direction 45
+forever
+move 8 steps
+bounce
+end"></textarea>
+      <div id="console"></div>
+    </div>
+  </div>
+</div>
+
+<!-- sprite chooser -->
+<div id="chooserModal" class="modal hidden">
+  <div class="box" style="width:320px">
+    <h2>Add a sprite</h2>
+    <div class="btnrow">
+      <button onclick="EC.chooseUpload()">Upload image</button>
+      <button onclick="EC.choosePaint()">Paint new</button>
+    </div>
+    <div class="actions"><button class="ghost" onclick="EC.closeModal('chooserModal')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- paint -->
+<div id="paintModal" class="modal hidden">
+  <div class="box" id="paintBox">
+    <h2 id="paintTitle">Paint</h2>
+    <div class="paintTools" id="swatches"></div>
+    <div class="paintTools">
+      <input type="color" id="paintColor" value="#4b6ef5" />
+      <button class="ghost tool on" id="tool-brush" onclick="EC.paint.setTool('brush')">Brush</button>
+      <button class="ghost tool" id="tool-eraser" onclick="EC.paint.setTool('eraser')">Eraser</button>
+      <button class="ghost tool" id="tool-rect" onclick="EC.paint.setTool('rect')">▭ Rect</button>
+      <button class="ghost tool" id="tool-circle" onclick="EC.paint.setTool('circle')">◯ Oval</button>
+      <button class="ghost tool" id="tool-triangle" onclick="EC.paint.setTool('triangle')">△ Tri</button>
+      <span style="font-size:12px;color:var(--muted)">Size</span>
+      <input type="range" id="paintSize" min="1" max="60" value="8" />
+      <button class="ghost" onclick="EC.paint.undo()">↶ Undo</button>
+      <button class="ghost" onclick="EC.paint.redo()">↷ Redo</button>
+      <button class="ghost" onclick="EC.paint.clear()">Clear</button>
+    </div>
+    <div id="paintCanvasWrap"><canvas id="paintCanvas" width="400" height="300"></canvas></div>
+    <div class="actions">
+      <button class="ghost" onclick="EC.closeModal('paintModal')">Cancel</button>
+      <button onclick="EC.paint.save()">Save costume</button>
+    </div>
+  </div>
+</div>
+
+<!-- variable/list/api/define generic prompt -->
+<div id="apiModal" class="modal hidden">
+  <div class="box" style="width:360px">
+    <h2>Connect an API</h2>
+    <div class="field"><label>Name (used in code)</label><input id="api_name" placeholder="weather"/></div>
+    <div class="field"><label>URL</label><input id="api_url" placeholder="https://..."/></div>
+    <div class="field"><label>Method</label><select id="api_method"><option>GET</option><option>POST</option></select></div>
+    <div class="field"><label>Field to read (dot path, optional)</label><input id="api_path" placeholder="main.temp"/></div>
+    <div class="field"><label>Auth header (optional)</label><input id="api_auth" placeholder="Bearer xyz"/></div>
+    <div class="err" id="api_err"></div>
+    <div class="actions"><button class="ghost" onclick="EC.closeModal('apiModal')">Cancel</button><button onclick="EC.saveApi()">Save</button></div>
+  </div>
+</div>
+
+<div id="defineModal" class="modal hidden">
+  <div class="box" style="width:420px">
+    <h2>Teach EasyCode a new command</h2>
+    <p style="font-size:13px;color:var(--muted)">I don't know: <b id="def_trigger"></b><br>
+    Define it using commands you know. Use <b>$1, $2…</b> for the numbers/quotes in the trigger.</p>
+    <textarea id="def_body" style="width:100%;height:140px;font-family:monospace" placeholder="say &quot;jumping!&quot;
+change y by $1
+wait 0.2 seconds
+change y by -$1"></textarea>
+    <div class="actions"><button class="ghost" onclick="EC.cancelDefine()">Skip</button><button onclick="EC.saveDefine()">Save command</button></div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" class="hidden" />
+<input type="file" id="backdropInput" accept="image/*" class="hidden" />
+<input type="file" id="spriteJsonInput" accept=".json,.sprite.json,application/json" class="hidden" />
+
+<script>
+/* =====================================================================
+   EasyCode — single-file plain-English Scratch-style coding studio
+   ===================================================================== */
+const EC = {};
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyCcpxLEiUek6EIqBSlpbxqbAKd5M2c6o5U",
+  authDomain:"easycode-90f92.firebaseapp.com",
+  projectId:"easycode-90f92",
+  storageBucket:"easycode-90f92.firebasestorage.app",
+  messagingSenderId:"1032763005288",
+  appId:"1:1032763005288:web:d27588f7824578eb951edd"
+};
+const STAGE_W=500, STAGE_H=600, LOOP_DELAY=16;
+
+/* ---------- state ---------- */
+let project = blankProject();
+let currentUser = null;
+let selectedSpriteId = null;
+let running = false;
+let runToken = 0;
+let lastError = "";
+let defineResolver = null, defineCtx = null;
+let mouseX = 0, mouseY = 0, mouseDown = false;
+
+function blankProject(){
+  return { sprites:[], variables:{}, lists:{}, apis:{}, backdrop:null, defs:{}, varHidden:{}, listHidden:{} };
+}
+
+/* =====================================================================
+   AUTH  (Firebase dynamic import + local fallback)
+   ===================================================================== */
+let authMode = "login";      // login | signup
+let firebaseReady = false;
+let fbAuth = null, fbFns = null;
+
+EC.showTab = function(m){
+  authMode = m;
+  document.getElementById('tabLogin').classList.toggle('on', m==='login');
+  document.getElementById('tabSignup').classList.toggle('on', m==='signup');
+  document.getElementById('confirmWrap').classList.toggle('hidden', m!=='signup');
+  document.getElementById('au_go').textContent = m==='signup' ? 'Create account' : 'Log in';
+  document.getElementById('au_err').textContent = '';
+};
+
+async function initFirebase(){
+  const modeEl = document.getElementById('au_mode');
+  if(!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey){
+    firebaseReady = false;
+    modeEl.textContent = "💾 Offline mode — accounts saved on this device";
+    restoreLocalSession();
+    return;
+  }
+  try{
+    const appMod  = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const authMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    fbAuth = authMod.getAuth(app);
+    fbFns = authMod;
+    firebaseReady = true;
+    modeEl.textContent = "☁ Connected to EasyCode cloud";
+    authMod.onAuthStateChanged(fbAuth, (user)=>{
+      if(user && !currentUser){
+        const uname = user.displayName || (user.email||'').split('@')[0];
+        enterApp(uname);
+      }
+    });
+  }catch(e){
+    firebaseReady = false;
+    console.error("Firebase unavailable, using local mode:", e && e.message);
+    modeEl.textContent = "💾 Offline mode — accounts saved on this device";
+    restoreLocalSession();
+  }
+}
+
+function localUsers(){ try{return JSON.parse(localStorage.getItem('easycode_users')||'{}');}catch(e){return {};} }
+function saveLocalUsers(u){ localStorage.setItem('easycode_users', JSON.stringify(u)); }
+function restoreLocalSession(){
+  if(currentUser) return;
+  const u = localStorage.getItem('easycode_currentUser');
+  if(u && localUsers()[u]) enterApp(u);
+}
+
+function validateSignup(user,pass,pass2){
+  if(user.length<3) return 'Username must be at least 3 characters.';
+  if(pass.length<6) return 'Password must be at least 6 characters.';
+  if(pass!==pass2) return 'Passwords do not match.';
+  return null;
+}
+EC.submitAuth = async function(){
+  const user = document.getElementById('au_user').value.trim();
+  const pass = document.getElementById('au_pass').value;
+  const pass2 = document.getElementById('au_pass2').value;
+  const err = (t)=>{ document.getElementById('au_err').textContent = t; };
+  err('');
+  if(authMode==='signup'){
+    const v = validateSignup(user,pass,pass2);
+    if(v) return err(v);
+    const r = await doSignup(user, pass);
+    if(r) return err(r);
+  }else{
+    if(!user||!pass) return err('Please enter your username and password.');
+    const r = await doLogin(user, pass);
+    if(r) return err(r);
+  }
+};
+
+async function doSignup(user, pass){
+  if(firebaseReady){
+    try{
+      const cred = await fbFns.createUserWithEmailAndPassword(fbAuth, user+'@easycode.local', pass);
+      await fbFns.updateProfile(cred.user, {displayName:user});
+      enterApp(user); return null;
+    }catch(e){ return friendlyFb(e); }
+  }
+  const users = localUsers();
+  if(users[user]) return 'That username is already taken.';
+  users[user] = {password:pass, displayName:user};
+  saveLocalUsers(users);
+  localStorage.setItem('easycode_currentUser', user);
+  enterApp(user); return null;
+}
+async function doLogin(user, pass){
+  if(firebaseReady){
+    try{
+      await fbFns.signInWithEmailAndPassword(fbAuth, user+'@easycode.local', pass);
+      enterApp(user); return null;
+    }catch(e){ return friendlyFb(e); }
+  }
+  const users = localUsers();
+  if(!users[user]) return 'No account with that username. Try signing up.';
+  if(users[user].password!==pass) return 'Incorrect password.';
+  localStorage.setItem('easycode_currentUser', user);
+  enterApp(user); return null;
+}
+function friendlyFb(e){
+  const c = (e && e.code) || '';
+  if(c.includes('email-already-in-use')) return 'That username is already taken.';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return 'Wrong username or password.';
+  if(c.includes('weak-password')) return 'Password is too weak (min 6 characters).';
+  if(c.includes('network')) return 'Network problem — try again.';
+  return 'Could not sign in. ' + (e && e.message ? e.message : '');
+}
+
+function enterApp(uname){
+  if(currentUser) return;   // already signed in — never reload mid-session
+  currentUser = uname;
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoName').textContent = uname;
+  loadProject(uname).then(()=>{ renderAll(); relayout(); });
+}
+
+EC.logout = async function(){
+  saveProject();
+  if(firebaseReady){ try{ await fbFns.signOut(fbAuth);}catch(e){} }
+  localStorage.removeItem('easycode_currentUser');
+  currentUser=null; project=blankProject(); selectedSpriteId=null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('auth').classList.remove('hidden');
+};
+
+/* =====================================================================
+   PERSISTENCE
+   ===================================================================== */
+function projectKey(){ return 'easycode_project_'+currentUser; }
+function saveProject(){
+  if(!currentUser) return;
+  const data = {
+    sprites: project.sprites.map(s=>({name:s.name,costume:s.costume,x:s.x,y:s.y,dir:s.dir,size:s.size,visible:s.visible,code:s.code})),
+    variables: project.variables, lists: project.lists, apis: project.apis,
+    backdrop: project.backdrop, defs: project.defs,
+    varHidden: project.varHidden, listHidden: project.listHidden
+  };
+  try{ localStorage.setItem(projectKey(), JSON.stringify(data)); }catch(e){ console.error('save failed',e); }
+}
+async function loadProject(uname){
+  project = blankProject();
+  let data=null;
+  try{ data = JSON.parse(localStorage.getItem('easycode_project_'+uname)||'null'); }catch(e){}
+  if(!data){ selectedSpriteId=null; return; }
+  project.variables = data.variables||{}; project.lists = data.lists||{};
+  project.apis = data.apis||{}; project.backdrop = data.backdrop||null; project.defs = data.defs||{};
+  project.varHidden = data.varHidden||{}; project.listHidden = data.listHidden||{};
+  for(const sd of (data.sprites||[])){
+    const sp = await makeSpriteObj(sd.name, sd.costume);
+    Object.assign(sp,{x:sd.x||0,y:sd.y||0,dir:sd.dir==null?90:sd.dir,size:sd.size==null?100:sd.size,
+      visible:sd.visible!==false, code:sd.code||''});
+    project.sprites.push(sp);
+  }
+  selectedSpriteId = project.sprites[0] ? project.sprites[0].id : null;
+}
+
+/* =====================================================================
+   SPRITES
+   ===================================================================== */
+let spriteSeq = 1;
+function makeSpriteObj(name, costume){
+  return new Promise((resolve)=>{
+    const sp = { id:'sp'+(spriteSeq++), name:name||('Sprite'+spriteSeq), costume:costume,
+      x:0,y:0,dir:90,size:100,visible:true,code:'', nw:40,nh:40, say:'', el:null, imgEl:null, bubbleEl:null };
+    if(!costume){ resolve(sp); return; }
+    const img = new Image();
+    img.onload = ()=>{ sp.nw=img.naturalWidth||img.width||40; sp.nh=img.naturalHeight||img.height||40; resolve(sp); };
+    img.onerror = ()=>resolve(sp);
+    img.src = costume;
+  });
+}
+
+EC.addSpriteFromData = async function(name, costume, code){
+  const sp = await makeSpriteObj(name, costume);
+  if(code) sp.code = code;
+  project.sprites.push(sp);
+  selectedSpriteId = sp.id;
+  renderAll(); saveProject();
+  return sp;
+};
+
+function currentSprite(){ return project.sprites.find(s=>s.id===selectedSpriteId)||null; }
+function findSprite(name){
+  name=(name||'').trim().toLowerCase();
+  return project.sprites.find(s=>s.name.toLowerCase()===name)||null;
+}
+
+EC.selectSprite = function(id){
+  selectedSpriteId = id;
+  const s = currentSprite();
+  document.getElementById('editor').value = s ? s.code : '';
+  document.getElementById('editor').disabled = !s;
+  document.getElementById('codingLabel').textContent = s ? ('Coding: @'+s.name) : 'Coding: —';
+  document.querySelectorAll('#spriteList .chip').forEach(c=>c.classList.toggle('sel', c.dataset.id===id));
+};
+
+EC.deleteSprite = function(id){
+  project.sprites = project.sprites.filter(s=>s.id!==id);
+  if(selectedSpriteId===id) selectedSpriteId = project.sprites[0]?project.sprites[0].id:null;
+  renderAll(); saveProject();
+};
+
+EC.renameSprite = function(id){
+  const s = project.sprites.find(x=>x.id===id); if(!s) return;
+  const n = prompt('Rename sprite', s.name); if(n){ s.name=n.trim()||s.name; renderAll(); saveProject(); }
+};
+
+/* sprite chooser */
+EC.openSpriteChooser = ()=>document.getElementById('chooserModal').classList.remove('hidden');
+EC.closeModal = (id)=>document.getElementById(id).classList.add('hidden');
+EC.chooseUpload = function(){ EC.closeModal('chooserModal'); document.getElementById('fileInput').click(); };
+EC.choosePaint = function(){ EC.closeModal('chooserModal'); EC.paint.open(null); };
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = async ()=>{ await EC.addSpriteFromData(f.name.replace(/\.[^.]+$/,'')||'Sprite', r.result); };
+  r.readAsDataURL(f); e.target.value='';
+});
+
+/* backdrop */
+EC.addBackdrop = ()=>document.getElementById('backdropInput').click();
+EC.clearBackdrop = function(){ project.backdrop=null; renderStage(); saveProject(); };
+document.getElementById('backdropInput').addEventListener('change', function(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ project.backdrop=r.result; renderStage(); saveProject(); };
+  r.readAsDataURL(f); e.target.value='';
+});
+
+/* sprite export/import */
+EC.downloadSprite = function(id){
+  const s = project.sprites.find(x=>x.id===id); if(!s) return;
+  const usedDefs = {}; // include all user defs (small); could filter
+  Object.assign(usedDefs, project.defs);
+  const data = { easycodeSprite:1, name:s.name, costume:s.costume, code:s.code, defs:usedDefs };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download = s.name.replace(/\s+/g,'_')+'.sprite.json'; a.click();
+};
+EC.importSprite = ()=>document.getElementById('spriteJsonInput').click();
+document.getElementById('spriteJsonInput').addEventListener('change', function(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if(!d.easycodeSprite && !d.costume) throw 0;
+      if(d.defs) Object.assign(project.defs, d.defs);
+      await EC.addSpriteFromData(d.name||'Imported', d.costume, d.code||'');
+    }catch(err){ alert('Not a valid .sprite.json file.'); }
+  };
+  r.readAsText(f); e.target.value='';
+});
+
+/* =====================================================================
+   DATA (variables, lists, APIs)
+   ===================================================================== */
+EC.makeVariable = function(){
+  const n = prompt('Variable name'); if(!n) return;
+  project.variables[n.trim()] = 0; renderData(); renderStage(); saveProject();
+};
+EC.makeList = function(){
+  const n = prompt('List name'); if(!n) return;
+  project.lists[n.trim()] = []; renderData(); renderStage(); saveProject();
+};
+EC.deleteVar = function(n){ delete project.variables[n]; delete project.varHidden[n]; renderData(); renderStage(); saveProject(); };
+EC.deleteList = function(n){ delete project.lists[n]; delete project.listHidden[n]; renderData(); renderStage(); saveProject(); };
+EC.setVarVisible = function(n, vis){ if(vis) delete project.varHidden[n]; else project.varHidden[n]=true; renderMonitors(); renderData(); saveProject(); };
+EC.setListVisible = function(n, vis){ if(vis) delete project.listHidden[n]; else project.listHidden[n]=true; renderMonitors(); renderData(); saveProject(); };
+EC.connectApi = ()=>document.getElementById('apiModal').classList.remove('hidden');
+EC.saveApi = function(){
+  const name=document.getElementById('api_name').value.trim();
+  const url=document.getElementById('api_url').value.trim();
+  if(!name||!url){ document.getElementById('api_err').textContent='Name and URL required.'; return; }
+  project.apis[name]={url,method:document.getElementById('api_method').value,
+    path:document.getElementById('api_path').value.trim(),auth:document.getElementById('api_auth').value.trim()};
+  ['api_name','api_url','api_path','api_auth'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('api_err').textContent='';
+  EC.closeModal('apiModal'); renderData(); saveProject();
+};
+EC.deleteApi = function(n){ delete project.apis[n]; renderData(); saveProject(); };
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function renderAll(){ renderSprites(); renderData(); renderStage(); EC.selectSprite(selectedSpriteId); }
+
+function renderSprites(){
+  const list = document.getElementById('spriteList');
+  list.innerHTML='';
+  for(const s of project.sprites){
+    const chip = document.createElement('div');
+    chip.className='chip'+(s.id===selectedSpriteId?' sel':'');
+    chip.dataset.id=s.id;
+    chip.innerHTML = `<img${s.costume?` src="${s.costume}"`:''} alt=""><span class="nm">${escapeHtml(s.name)}</span>`;
+    const tools=document.createElement('span'); tools.className='tools';
+    tools.innerHTML=`<button class="ghost mini" title="Edit costume">✏️</button>
+      <button class="ghost mini" title="Rename">Aa</button>
+      <button class="ghost mini" title="Download">⬇</button>
+      <button class="ghost mini" title="Delete">🗑</button>`;
+    const [edit,ren,dl,del]=tools.querySelectorAll('button');
+    edit.onclick=(ev)=>{ev.stopPropagation();EC.paint.open(s.id);};
+    ren.onclick=(ev)=>{ev.stopPropagation();EC.renameSprite(s.id);};
+    dl.onclick=(ev)=>{ev.stopPropagation();EC.downloadSprite(s.id);};
+    del.onclick=(ev)=>{ev.stopPropagation();EC.deleteSprite(s.id);};
+    chip.appendChild(tools);
+    chip.onclick=()=>EC.selectSprite(s.id);
+    list.appendChild(chip);
+  }
+  const imp=document.createElement('button'); imp.className='ghost mini'; imp.style.marginTop='8px';
+  imp.textContent='⬆ Import .sprite.json'; imp.onclick=EC.importSprite; list.appendChild(imp);
+
+  const has=project.sprites.length>0;
+  document.getElementById('editor').disabled=!has;
+  document.getElementById('goBtn').disabled=false;
+}
+
+function renderData(){
+  const d=document.getElementById('dataList'); d.innerHTML='';
+  for(const k of Object.keys(project.variables)){
+    const c=document.createElement('div'); c.className='datachip';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.title='Show monitor on stage';
+    cb.checked=!project.varHidden[k]; cb.style.margin='0 2px 0 0';
+    cb.onchange=()=>EC.setVarVisible(k, cb.checked);
+    c.appendChild(cb);
+    const s=document.createElement('span'); s.innerHTML=`<span class="k">(${escapeHtml(k)})</span> <span>= ${escapeHtml(String(project.variables[k]))}</span>`;
+    c.appendChild(s);
+    const x=document.createElement('button'); x.className='ghost mini'; x.textContent='×'; x.style.marginLeft='auto';
+    x.onclick=()=>EC.deleteVar(k); c.appendChild(x); d.appendChild(c);
+  }
+  for(const k of Object.keys(project.lists)){
+    const c=document.createElement('div'); c.className='datachip';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.title='Show monitor on stage';
+    cb.checked=!project.listHidden[k]; cb.style.margin='0 2px 0 0';
+    cb.onchange=()=>EC.setListVisible(k, cb.checked);
+    c.appendChild(cb);
+    const s=document.createElement('span'); s.innerHTML=`<span class="k">[${escapeHtml(k)}]</span> <span>(${project.lists[k].length} items)</span>`;
+    c.appendChild(s);
+    const x=document.createElement('button'); x.className='ghost mini'; x.textContent='×'; x.style.marginLeft='auto';
+    x.onclick=()=>EC.deleteList(k); c.appendChild(x); d.appendChild(c);
+  }
+  for(const k of Object.keys(project.apis)){
+    const c=document.createElement('div'); c.className='datachip';
+    c.innerHTML=`<span class="k">API</span><span>${escapeHtml(k)}</span>`;
+    const x=document.createElement('button'); x.className='ghost mini'; x.textContent='×'; x.style.marginLeft='auto';
+    x.onclick=()=>EC.deleteApi(k); c.appendChild(x); d.appendChild(c);
+  }
+}
+
+function renderStage(){
+  const stage=document.getElementById('stage');
+  const bd=document.getElementById('backdropImg');
+  if(project.backdrop){ bd.src=project.backdrop; bd.classList.remove('hidden'); }
+  else bd.classList.add('hidden');
+
+  // ensure sprite DOM
+  const seen=new Set();
+  for(const s of project.sprites){
+    seen.add(s.id);
+    if(!s.el){
+      s.el=document.createElement('div'); s.el.className='sprite'; s.el.dataset.id=s.id;
+      s.imgEl=document.createElement('img'); s.el.appendChild(s.imgEl);
+      s.bubbleEl=document.createElement('div'); s.bubbleEl.className='bubble hidden'; s.el.appendChild(s.bubbleEl);
+      stage.appendChild(s.el);
+      enableDrag(s);
+    }
+    if(s.imgEl.src!==s.costume && s.costume) s.imgEl.src=s.costume;
+  }
+  // remove stale
+  [...stage.querySelectorAll('.sprite')].forEach(el=>{ if(!seen.has(el.dataset.id)) el.remove(); });
+  positionSprites();
+  renderMonitors();
+}
+
+function positionSprites(){
+  for(const s of project.sprites){
+    if(!s.el) continue;
+    const w=s.nw*s.size/100, h=s.nh*s.size/100;
+    const px=STAGE_W/2 + s.x, py=STAGE_H/2 - s.y;
+    s.imgEl.style.width=w+'px'; s.imgEl.style.height=h+'px';
+    s.el.style.transform=`translate(${px-w/2}px,${py-h/2}px) rotate(${s.dir-90}deg)`;
+    s.el.style.display=s.visible?'block':'none';
+    if(s.say){ s.bubbleEl.textContent=s.say; s.bubbleEl.classList.remove('hidden');
+      s.bubbleEl.style.left=w+'px'; }
+    else s.bubbleEl.classList.add('hidden');
+  }
+}
+
+function renderMonitors(){
+  const stage=document.getElementById('stage');
+  [...stage.querySelectorAll('.monitor')].forEach(m=>m.remove());
+  let top=8;
+  for(const k of Object.keys(project.variables)){
+    if(project.varHidden[k]) continue;
+    const m=document.createElement('div'); m.className='monitor'; m.dataset.name=k; m.dataset.kind='var';
+    m.style.left='8px'; m.style.top=top+'px';
+    m.innerHTML=`${escapeHtml(k)}<span class="val">${escapeHtml(String(project.variables[k]))}</span>`;
+    stage.appendChild(m); top+=26;
+  }
+  for(const k of Object.keys(project.lists)){
+    if(project.listHidden[k]) continue;
+    const m=document.createElement('div'); m.className='monitor'; m.dataset.name=k; m.dataset.kind='list';
+    m.style.left='8px'; m.style.top=top+'px';
+    const items=project.lists[k].slice(0,6).map((v,i)=>(i+1)+'. '+v).join('  ');
+    m.innerHTML=`${escapeHtml(k)}: <span class="val">${escapeHtml(items||'empty')}</span>`;
+    stage.appendChild(m); top+=26;
+  }
+}
+
+/* stage auto-scale */
+function relayout(){
+  const wrap=document.getElementById('stageWrap');
+  const scale=document.getElementById('stageScale');
+  const pad=24;
+  const availW=wrap.clientWidth-pad, availH=wrap.clientHeight-pad;
+  let s=Math.min(availW/STAGE_W, availH/STAGE_H);
+  if(!isFinite(s)||s<=0) s=1;
+  window.__ecScale=s;
+  scale.style.transform=`scale(${s})`;
+  scale.style.left=((wrap.clientWidth - STAGE_W*s)/2)+'px';
+  scale.style.top=((wrap.clientHeight - STAGE_H*s)/2)+'px';
+}
+window.addEventListener('resize', relayout);
+
+/* live coordinate readout (scale-aware, center origin) */
+function showCoords(x,y){ const el=document.getElementById('coordReadout'); if(el) el.textContent='x: '+Math.round(x)+'  y: '+Math.round(y); }
+(function initCoords(){
+  const stageEl=document.getElementById('stage'); if(!stageEl) return;
+  stageEl.addEventListener('pointermove',(e)=>{
+    const sc=window.__ecScale||1;
+    const rect=stageEl.getBoundingClientRect();
+    const lx=(e.clientX-rect.left)/sc, ly=(e.clientY-rect.top)/sc;
+    mouseX = lx-STAGE_W/2; mouseY = STAGE_H/2-ly;
+    showCoords(mouseX, mouseY);
+  });
+  document.addEventListener('pointerdown',()=>{ mouseDown=true; });
+  document.addEventListener('pointerup',()=>{ mouseDown=false; });
+})();
+
+/* drag sprites (scale-aware, center origin) */
+function enableDrag(s){
+  let dragging=false, sx=0, sy=0, ox=0, oy=0;
+  s.el.addEventListener('pointerdown',(e)=>{
+    dragging=true; s.el.setPointerCapture(e.pointerId);
+    s.el.style.cursor='grabbing'; sx=e.clientX; sy=e.clientY; ox=s.x; oy=s.y; e.preventDefault();
+  });
+  s.el.addEventListener('pointermove',(e)=>{
+    if(!dragging) return;
+    const sc=window.__ecScale||1;
+    s.x=ox+(e.clientX-sx)/sc;
+    s.y=oy-(e.clientY-sy)/sc;   // y up
+    showCoords(s.x, s.y);
+    positionSprites();
+  });
+  const up=(e)=>{ if(dragging){dragging=false; s.el.style.cursor='grab'; saveProject();} };
+  s.el.addEventListener('pointerup',up);
+  s.el.addEventListener('pointercancel',up);
+}
+
+/* editor persistence */
+document.getElementById('editor').addEventListener('input',function(){
+  const s=currentSprite(); if(s){ s.code=this.value; saveProject(); }
+});
+
+/* =====================================================================
+   CONSOLE
+   ===================================================================== */
+function logMsg(t,cls){
+  const c=document.getElementById('console');
+  const line=document.createElement('div'); if(cls)line.className=cls; line.textContent=t;
+  c.appendChild(line); c.scrollTop=c.scrollHeight;
+}
+function clearConsole(){ document.getElementById('console').innerHTML=''; }
+
+/* =====================================================================
+   LANGUAGE — PARSER
+   ===================================================================== */
+function stripAngle(s){
+  s=s.trim();
+  if(s[0]!=='<' || s[s.length-1]!=='>')
+    throw new Error('Conditions must be wrapped in angle brackets < >  (got: '+s+')');
+  return s.slice(1,-1).trim();
+}
+
+function parseProgram(code){
+  const lines = code.split('\n')
+    .map(l=>l.replace(/\/\/.*$/,'').replace(/\s+$/,'').replace(/^\s+/,''))
+    .map((l,idx)=>({l,idx}))
+    .filter(x=>x.l!=='');
+  const {stmts} = parseList(lines,0,[]);
+  const setup=[]; const scripts=[]; let cur=null;
+  for(const n of stmts){
+    if(n.kind==='hat'){ cur=[]; scripts.push(cur); }
+    else if(cur===null){ setup.push(n); }
+    else cur.push(n);
+  }
+  if(scripts.length===0){ return {setup:[], scripts:[setup]}; }  // no hat => one script
+  return {setup, scripts};
+}
+
+function parseList(lines,start,stops){
+  const stmts=[]; let i=start;
+  while(i<lines.length){
+    const line=lines[i].l;
+    if(stops.includes(line)) return {stmts,next:i};
+    const r=parseStatement(lines,i);
+    stmts.push(r.node); i=r.next;
+  }
+  return {stmts,next:i};
+}
+
+function parseStatement(lines,i){
+  const line=lines[i].l;
+  const low=line.toLowerCase();
+  if(low==='when go clicked') return {node:{kind:'hat'}, next:i+1};
+
+  if(low==='forever'){
+    const b=parseList(lines,i+1,['end']);
+    expectEnd(lines,b.next,'forever');
+    return {node:{kind:'forever',body:b.stmts}, next:b.next+1};
+  }
+  if(low.startsWith('repeat until ')){
+    const cond=stripAngle(line.slice('repeat until '.length));
+    const b=parseList(lines,i+1,['end']); expectEnd(lines,b.next,'repeat until');
+    return {node:{kind:'repeatUntil',cond,body:b.stmts}, next:b.next+1};
+  }
+  if(low.startsWith('repeat ')){
+    const count=line.slice('repeat '.length).trim();
+    const b=parseList(lines,i+1,['end']); expectEnd(lines,b.next,'repeat');
+    return {node:{kind:'repeat',count,body:b.stmts}, next:b.next+1};
+  }
+  if(low.startsWith('while ')){
+    const cond=stripAngle(line.slice('while '.length));
+    const b=parseList(lines,i+1,['end']); expectEnd(lines,b.next,'while');
+    return {node:{kind:'while',cond,body:b.stmts}, next:b.next+1};
+  }
+  if(low.startsWith('if ') && low!=='if on edge bounce'){
+    const cond=stripAngle(line.slice('if '.length));
+    const b=parseList(lines,i+1,['end','else']);
+    let elseBody=null, next=b.next;
+    if(lines[b.next] && lines[b.next].l.toLowerCase()==='else'){
+      const e=parseList(lines,b.next+1,['end']); elseBody=e.stmts; next=e.next;
+    }
+    expectEnd(lines,next,'if');
+    return {node:{kind:'if',cond,body:b.stmts,elseBody}, next:next+1};
+  }
+  return {node:{kind:'cmd',line}, next:i+1};
+}
+function expectEnd(lines,idx,what){
+  if(!lines[idx] || lines[idx].l.toLowerCase()!=='end')
+    throw new Error('Missing "end" for '+what+' block.');
+}
+
+/* =====================================================================
+   EXPRESSIONS
+   ===================================================================== */
+function tokenizeExpr(s){
+  const toks=[]; let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(c===' '){i++;continue;}
+    if(c==='"'){ let j=i+1,str=''; while(j<s.length&&s[j]!=='"'){str+=s[j];j++;} toks.push({t:'str',v:str}); i=j+1; continue; }
+    if(c==='('){ let j=i+1,n=''; while(j<s.length&&s[j]!==')'){n+=s[j];j++;} toks.push({t:'var',v:n.trim()}); i=j+1; continue; }
+    if(c==='['){ let j=i+1,n=''; while(j<s.length&&s[j]!==']'){n+=s[j];j++;} toks.push({t:'list',v:n.trim()}); i=j+1; continue; }
+    if('+*/'.includes(c)){ toks.push({t:'op',v:c}); i++; continue; }
+    if(c==='-'){ toks.push({t:'op',v:'-'}); i++; continue; }
+    let j=i,w='';
+    while(j<s.length && ' +*/-"()[]'.indexOf(s[j])===-1){ w+=s[j]; j++; }
+    if(/^\d+(\.\d+)?$/.test(w)) toks.push({t:'num',v:parseFloat(w)});
+    else toks.push({t:'word',v:w});
+    i=j;
+  }
+  return toks;
+}
+function evalExpr(str, ctx){
+  const toks=tokenizeExpr(String(str)); const p={toks,i:0};
+  const v=parseAdd(p,ctx);
+  return v;
+}
+function peek(p){return p.toks[p.i];}
+function parseAdd(p,ctx){
+  let left=parseMul(p,ctx);
+  while(peek(p)&&peek(p).t==='op'&&(peek(p).v==='+'||peek(p).v==='-')){
+    const op=peek(p).v; p.i++; const right=parseMul(p,ctx);
+    if(op==='+'){
+      if(isNum(left)&&isNum(right)) left=(+left)+(+right);
+      else left=String(dispV(left))+String(dispV(right));
+    } else left=(+left)-(+right);
+  }
+  return left;
+}
+function parseMul(p,ctx){
+  let left=parseAtom(p,ctx);
+  while(peek(p)&&peek(p).t==='op'&&(peek(p).v==='*'||peek(p).v==='/')){
+    const op=peek(p).v; p.i++; const right=parseAtom(p,ctx);
+    left = op==='*' ? (+left)*(+right) : (+left)/(+right);
+  }
+  return left;
+}
+function parseAtom(p,ctx){
+  const tk=peek(p);
+  if(!tk) return 0;
+  if(tk.t==='op'&&tk.v==='-'){ p.i++; return -(+parseAtom(p,ctx)); }
+  if(tk.t==='num'){ p.i++; return tk.v; }
+  if(tk.t==='str'){ p.i++; return tk.v; }
+  if(tk.t==='var'){ p.i++; return varGet(tk.v); }
+  if(tk.t==='list'){ p.i++; return (project.lists[tk.v]||[]).join(' '); }
+  if(tk.t==='word'){
+    const w=tk.v.toLowerCase();
+    if(w==='item'){ p.i++; const idx=parseAtom(p,ctx); expectWord(p,'of'); const lt=peek(p);
+      if(lt&&lt.t==='list'){ p.i++; const arr=project.lists[lt.v]||[]; return arr[(+idx)-1]; }
+      return ''; }
+    if(w==='length'){ p.i++; expectWord(p,'of'); const lt=peek(p);
+      if(lt&&lt.t==='list'){ p.i++; return (project.lists[lt.v]||[]).length; }
+      return 0; }
+    if(w==='mouse'){ p.i++; const nx=peek(p);
+      if(nx&&nx.t==='word'&&nx.v.toLowerCase()==='x'){ p.i++; return mouseX; }
+      if(nx&&nx.t==='word'&&nx.v.toLowerCase()==='y'){ p.i++; return mouseY; }
+      return 'mouse'; }
+    if(w==='true'){p.i++;return true;} if(w==='false'){p.i++;return false;}
+    p.i++; return tk.v; // bare word as string
+  }
+  p.i++; return 0;
+}
+function expectWord(p,w){ const t=peek(p); if(t&&t.t==='word'&&t.v.toLowerCase()===w) p.i++; }
+function isNum(v){ return typeof v==='number' || (typeof v==='string' && v.trim()!=='' && !isNaN(v)); }
+function dispV(v){ return v==null?'':v; }
+function varGet(name){
+  if(Object.prototype.hasOwnProperty.call(project.variables,name)) return project.variables[name];
+  return 0;
+}
+
+/* =====================================================================
+   CONDITIONS
+   ===================================================================== */
+function evalCondWrapped(cond, ctx){ return evalBool(stripAngle(cond), ctx); }
+function evalBool(c, ctx){
+  c=c.trim();
+  const low=c.toLowerCase();
+  if(low.startsWith('touching ')) return sense(c, ctx);
+  if(low==='mouse down'||low==='mouse is down'||low==='mousedown') return mouseDown;
+  // comparison
+  const sp=splitCompare(c);
+  if(!sp){ const v=evalExpr(c,ctx); return !!v && v!=='false' && v!==0; }
+  const l=evalExpr(sp.left,ctx), r=evalExpr(sp.right,ctx);
+  return compare(l, sp.op, r);
+}
+function splitCompare(c){
+  let depthP=0,depthB=0,inStr=false;
+  const two=['<=','>=','<>','!='];
+  for(let i=0;i<c.length;i++){
+    const ch=c[i];
+    if(ch==='"') inStr=!inStr;
+    if(inStr) continue;
+    if(ch==='(') depthP++; if(ch===')') depthP--;
+    if(ch==='[') depthB++; if(ch===']') depthB--;
+    if(depthP||depthB) continue;
+    const t2=c.substr(i,2);
+    if(two.includes(t2)) return {op:t2,left:c.slice(0,i),right:c.slice(i+2)};
+    if(ch==='='||ch==='<'||ch==='>') return {op:ch,left:c.slice(0,i),right:c.slice(i+1)};
+  }
+  return null;
+}
+function compare(l,op,r){
+  const bothNum=isNum(l)&&isNum(r);
+  const a=bothNum?+l:String(dispV(l)), b=bothNum?+r:String(dispV(r));
+  switch(op){
+    case '=': return a===b || (bothNum && +l=== +r);
+    case '<': return a<b; case '>': return a>b;
+    case '<=': return a<=b; case '>=': return a>=b;
+    case '<>': case '!=': return a!==b;
+  }
+  return false;
+}
+
+/* =====================================================================
+   SENSING
+   ===================================================================== */
+function bbox(s){
+  const w=s.nw*s.size/100, h=s.nh*s.size/100;
+  return {left:s.x-w/2,right:s.x+w/2,top:s.y+h/2,bottom:s.y-h/2,w,h};
+}
+function sense(c, ctx){
+  const sp=ctx.sprite; const b=bbox(sp);
+  const low=c.toLowerCase();
+  if(low==='touching edge')
+    return b.left<=-STAGE_W/2 || b.right>=STAGE_W/2 || b.bottom<=-STAGE_H/2 || b.top>=STAGE_H/2;
+  if(low==='touching left')  return b.left<=-STAGE_W/2;
+  if(low==='touching right') return b.right>=STAGE_W/2;
+  if(low==='touching top')   return b.top>=STAGE_H/2;
+  if(low==='touching bottom')return b.bottom<=-STAGE_H/2;
+  if(low==='touching mouse pointer'||low==='touching mouse-pointer')
+    return mouseX>=b.left && mouseX<=b.right && mouseY<=b.top && mouseY>=b.bottom;
+  let m;
+  if(m=low.match(/^touching colou?r (.+)$/)) return touchingColor(sp, c.slice(c.toLowerCase().indexOf('colo')).replace(/^colou?r\s+/i,'').trim());
+  // touching NAME (sprite)
+  const name=c.slice('touching '.length).trim();
+  const other=findSprite(name);
+  if(other && other.id!==sp.id){ const ob=bbox(other); return overlap(b,ob); }
+  return false;
+}
+function overlap(a,b){ return a.left<b.right && a.right>b.left && a.bottom<b.top && a.top>b.bottom; }
+
+let _senseCanvas=null;
+function touchingColor(sp, colorStr){
+  const target=parseColor(colorStr); if(!target) return false;
+  if(!_senseCanvas){ _senseCanvas=document.createElement('canvas'); _senseCanvas.width=STAGE_W; _senseCanvas.height=STAGE_H; }
+  const cv=_senseCanvas, cx=cv.getContext('2d',{willReadFrequently:true});
+  cx.clearRect(0,0,STAGE_W,STAGE_H);
+  if(project.backdrop && _bdImg && _bdImg.complete) cx.drawImage(_bdImg,0,0,STAGE_W,STAGE_H);
+  for(const o of project.sprites){
+    if(o.id===sp.id || !o.visible || !o.imgEl || !o.imgEl.complete) continue;
+    const w=o.nw*o.size/100,h=o.nh*o.size/100;
+    const px=STAGE_W/2+o.x, py=STAGE_H/2-o.y;
+    cx.save(); cx.translate(px,py); cx.rotate((o.dir-90)*Math.PI/180);
+    try{ cx.drawImage(o.imgEl,-w/2,-h/2,w,h); }catch(e){}
+    cx.restore();
+  }
+  const b=bbox(sp);
+  const x0=Math.max(0,Math.floor(STAGE_W/2+b.left)), x1=Math.min(STAGE_W,Math.ceil(STAGE_W/2+b.right));
+  const y0=Math.max(0,Math.floor(STAGE_H/2-b.top)),  y1=Math.min(STAGE_H,Math.ceil(STAGE_H/2-b.bottom));
+  if(x1<=x0||y1<=y0) return false;
+  let data; try{ data=cx.getImageData(x0,y0,x1-x0,y1-y0).data; }catch(e){ return false; }
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<20) continue;
+    if(Math.abs(data[i]-target.r)<28 && Math.abs(data[i+1]-target.g)<28 && Math.abs(data[i+2]-target.b)<28) return true;
+  }
+  return false;
+}
+let _bdImg=null;
+function parseColor(str){
+  str=str.trim();
+  const named={red:'#ff0000',green:'#00cc00',blue:'#0000ff',yellow:'#ffff00',orange:'#ffa500',
+    purple:'#800080',pink:'#ff69b4',black:'#000000',white:'#ffffff',cyan:'#00ffff',magenta:'#ff00ff',gray:'#808080',grey:'#808080'};
+  let hex=named[str.toLowerCase()]||str;
+  const m=hex.match(/^#?([0-9a-f]{6})$/i);
+  if(m){ const n=parseInt(m[1],16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
+  const m3=hex.match(/^#?([0-9a-f]{3})$/i);
+  if(m3){ const s=m3[1]; return {r:parseInt(s[0]+s[0],16),g:parseInt(s[1]+s[1],16),b:parseInt(s[2]+s[2],16)}; }
+  return null;
+}
+
+/* =====================================================================
+   INTERPRETER
+   ===================================================================== */
+const STOP={__stop:true};
+function rad(d){return d*Math.PI/180;}
+function wait(sec){ return new Promise(r=>setTimeout(r, Math.max(0,sec*1000))); }
+function tick(){ return new Promise(r=>setTimeout(r, LOOP_DELAY)); }
+function varSetLive(){ renderData(); }
+
+EC.run = async function(){
+  if(project.sprites.length===0){ logMsg('⚠ Add a sprite first, then press Go.','e'); return; }
+  const s=currentSprite(); if(s) s.code=document.getElementById('editor').value;
+  clearConsole(); lastError=''; running=true; const token=++runToken;
+  if(project.backdrop){ _bdImg=new Image(); _bdImg.src=project.backdrop; }
+  logMsg('▶ Running…','g');
+  // compile all sprites first (so parse errors show up before starting)
+  const progs=[];
+  for(const sp of project.sprites){
+    try{ progs.push({sp, prog:parseProgram(sp.code||'')}); }
+    catch(e){ lastError='@'+sp.name+': '+e.message; logMsg('✖ '+lastError,'e'); running=false; return; }
+  }
+  try{
+    await Promise.all(progs.map(pp=>runSpriteProgram(pp.sp, pp.prog, token)));
+    if(token===runToken){ logMsg('■ Finished.','g'); running=false; }
+  }catch(e){
+    if(e!==STOP){ lastError=e.message||String(e); logMsg('✖ '+lastError,'e'); }
+    running=false;
+  }
+};
+EC.stop = function(){ running=false; runToken++; logMsg('■ Stopped.'); };
+
+async function runSpriteProgram(sprite, prog, token){
+  const setupCtx={sprite};
+  for(const n of prog.setup){ if(!running||token!==runToken) return; await execNode(n,setupCtx,token); }
+  await Promise.all(prog.scripts.map(scr=>{
+    const ctx={sprite};
+    return runScript(scr,ctx,token).catch(e=>{ if(e!==STOP) throw e; });
+  }));
+}
+async function runScript(stmts,ctx,token){
+  for(const n of stmts){ if(!running||token!==runToken) throw STOP; await execNode(n,ctx,token); }
+}
+async function execNode(n,ctx,token){
+  if(!running||token!==runToken) throw STOP;
+  switch(n.kind){
+    case 'cmd': await runCommand(n.line,ctx,token); break;
+    case 'forever':
+      while(running&&token===runToken){ await runScript(n.body,ctx,token); await tick(); }
+      break;
+    case 'repeat':{
+      const count=Math.round(+evalExpr(n.count,ctx))||0;
+      for(let k=0;k<count && running && token===runToken;k++){ await runScript(n.body,ctx,token); await tick(); }
+      break; }
+    case 'repeatUntil':
+      while(running&&token===runToken && !evalBool(n.cond,ctx)){ await runScript(n.body,ctx,token); await tick(); }
+      break;
+    case 'while':
+      while(running&&token===runToken && evalBool(n.cond,ctx)){ await runScript(n.body,ctx,token); await tick(); }
+      break;
+    case 'if':
+      if(evalBool(n.cond,ctx)) await runScript(n.body,ctx,token);
+      else if(n.elseBody) await runScript(n.elseBody,ctx,token);
+      break;
+  }
+}
+
+function varSet(name,val){ project.variables[name]=val; renderData(); renderMonitors(); }
+function getList(name){ if(!project.lists[name]) project.lists[name]=[]; return project.lists[name]; }
+
+async function runCommand(line, ctx, token){
+  const sp=ctx.sprite; let m;
+  const num=(x)=>+evalExpr(x,ctx);
+  const val=(x)=>evalExpr(x,ctx);
+  const low=line.toLowerCase();
+
+  // ---- MOTION ----
+  if(m=line.match(/^go to mouse[ -]?pointer$/i)){ sp.x=mouseX; sp.y=mouseY; }
+  else if(m=line.match(/^go to x (.+) y (.+)$/i)){ sp.x=num(m[1]); sp.y=num(m[2]); }
+  else if(m=line.match(/^point towards? mouse[ -]?pointer$/i)){ const dx=mouseX-sp.x, dy=mouseY-sp.y; sp.dir=Math.atan2(dx,dy)*180/Math.PI; }
+  else if(m=line.match(/^point towards? (.+)$/i)){ const t=findSprite(m[1]); if(t){ const dx=t.x-sp.x, dy=t.y-sp.y; sp.dir=Math.atan2(dx,dy)*180/Math.PI; } }
+  else if(m=line.match(/^set x to (.+)$/i)){ sp.x=num(m[1]); }
+  else if(m=line.match(/^set y to (.+)$/i)){ sp.y=num(m[1]); }
+  else if(m=line.match(/^change x by (.+)$/i)){ sp.x+=num(m[1]); }
+  else if(m=line.match(/^change y by (.+)$/i)){ sp.y+=num(m[1]); }
+  else if(m=line.match(/^move (.+?) steps?$/i)){ const d=num(m[1]); sp.x+=d*Math.sin(rad(sp.dir)); sp.y+=d*Math.cos(rad(sp.dir)); }
+  else if(m=line.match(/^point in direction (.+)$/i)){ sp.dir=num(m[1]); }
+  else if(m=line.match(/^turn\s+(left|right|cw|ccw|clockwise|counter-?clockwise|↺|↻)\s+(.+)$/i)){
+    const amt=num(m[2].replace(/\s+degrees?$/i,'').trim());
+    const left=/^(left|ccw|counter|↺)/i.test(m[1]); sp.dir += left ? -amt : amt; }
+  else if(m=line.match(/^turn\s+(.+)$/i)){ sp.dir += num(m[1].replace(/\s+degrees?$/i,'').trim()); }
+  else if(m=line.match(/^glide to x (.+) y (.+) in (.+?) seconds?$/i)){ await glide(sp,num(m[1]),num(m[2]),num(m[3]),token); }
+  else if(low==='bounce' || low==='if on edge bounce'){ bounceSprite(sp); }
+
+  // ---- LOOKS ----
+  else if(m=line.match(/^say "(.*)" for (.+?) seconds?$/i)){ sp.say=m[1]; positionSprites(); await wait(num(m[2])); sp.say=''; }
+  else if(m=line.match(/^say "(.*)"$/i)){ sp.say=m[1]; positionSprites(); }
+  else if(m=line.match(/^say (.+) for (.+?) seconds?$/i)){ sp.say=String(val(m[1])); positionSprites(); await wait(num(m[2])); sp.say=''; }
+  else if(m=line.match(/^say (.+)$/i)){ sp.say=String(val(m[1])); positionSprites(); }
+  else if(low==='show'){ sp.visible=true; }
+  else if(low==='hide'){ sp.visible=false; }
+  else if(m=line.match(/^set size to (.+)$/i)){ sp.size=num(m[1]); }
+  else if(m=line.match(/^change size by (.+)$/i)){ sp.size+=num(m[1]); }
+  else if(low==='remove backdrop'){ project.backdrop=null; renderStage(); }
+
+  // ---- CONTROL ----
+  else if(m=line.match(/^wait until (.+)$/i)){ const c=m[1]; while(running&&token===runToken && !evalBool(stripAngle(c),ctx)) await tick(); }
+  else if(m=line.match(/^wait (.+?) seconds?$/i)){ await wait(num(m[1])); }
+  else if(low==='stop'){ running=false; throw STOP; }
+
+  // ---- VARIABLES / LISTS ----
+  else if(m=line.match(/^set \((.+?)\) to (.+)$/i)){ varSet(m[1], val(m[2])); }
+  else if(m=line.match(/^change \((.+?)\) by (.+)$/i)){ varSet(m[1], (Number(varGet(m[1]))||0)+num(m[2])); }
+  else if(m=line.match(/^(?:hide|show) (?:variable )?\((.+?)\)$/i)){ EC.setVarVisible(m[1], /^show/i.test(line)); }
+  else if(m=line.match(/^(?:hide|show) (?:list )?\[(.+?)\]$/i)){ EC.setListVisible(m[1], /^show/i.test(line)); }
+  else if(m=line.match(/^add (.+) to \[(.+?)\]$/i)){ getList(m[2]).push(val(m[1])); renderMonitors(); }
+  else if(m=line.match(/^insert (.+) at (.+?) in \[(.+?)\]$/i)){ getList(m[3]).splice(Math.round(num(m[2]))-1,0,val(m[1])); renderMonitors(); }
+  else if(m=line.match(/^remove item (.+?) from \[(.+?)\]$/i)){ getList(m[2]).splice(Math.round(num(m[1]))-1,1); renderMonitors(); }
+  else if(m=line.match(/^replace item (.+?) of \[(.+?)\] with (.+)$/i)){ getList(m[2])[Math.round(num(m[1]))-1]=val(m[3]); renderMonitors(); }
+  else if(m=line.match(/^clear \[(.+?)\]$/i)){ project.lists[m[1]]=[]; renderMonitors(); }
+
+  // ---- SPRITES / API ----
+  else if(m=line.match(/^select sprite (.+)$/i)){ const t=findSprite(m[1]); if(t) ctx.sprite=t; else throw new Error('No sprite named '+m[1]); }
+  else if(m=line.match(/^get \((.+?)\) from (.+)$/i)){ await apiGet(m[1], m[2].trim(), ctx); }
+
+  // ---- USER-DEFINED / UNKNOWN ----
+  else { await handleUnknown(line, ctx, token); }
+
+  positionSprites();
+}
+
+async function glide(sp,tx,ty,secs,token){
+  const steps=Math.max(1,Math.round(secs*30)); const sx=sp.x,sy=sp.y;
+  for(let k=1;k<=steps && running && token===runToken;k++){
+    sp.x=sx+(tx-sx)*k/steps; sp.y=sy+(ty-sy)*k/steps; positionSprites(); await wait(secs/steps);
+  }
+}
+function bounceSprite(sp){
+  const b=bbox(sp);
+  let vx=Math.sin(rad(sp.dir)), vy=Math.cos(rad(sp.dir));
+  let bounced=false;
+  if(b.left<=-STAGE_W/2){ vx=Math.abs(vx); bounced=true; sp.x=-STAGE_W/2+b.w/2; }
+  if(b.right>=STAGE_W/2){ vx=-Math.abs(vx); bounced=true; sp.x=STAGE_W/2-b.w/2; }
+  if(b.top>=STAGE_H/2){ vy=-Math.abs(vy); bounced=true; sp.y=STAGE_H/2-b.h/2; }
+  if(b.bottom<=-STAGE_H/2){ vy=Math.abs(vy); bounced=true; sp.y=-STAGE_H/2+b.h/2; }
+  if(bounced){ sp.dir=Math.atan2(vx,vy)*180/Math.PI; }
+}
+
+async function apiGet(varName, apiName, ctx){
+  const api=project.apis[apiName];
+  if(!api){ throw new Error('No API named "'+apiName+'". Use Connect an API first.'); }
+  const opt={method:api.method||'GET', headers:{}};
+  if(api.auth) opt.headers['Authorization']=api.auth;
+  const res=await fetch(api.url, opt);
+  let data; const ct=res.headers.get('content-type')||'';
+  data = ct.includes('json') ? await res.json() : await res.text();
+  if(api.path){ for(const key of api.path.split('.')){ if(data!=null) data=data[key]; } }
+  varSet(varName, data);
+}
+
+/* ---- user-defined commands ---- */
+function templatize(line){
+  const params=[];
+  const key=line.replace(/"[^"]*"|-?\d+(\.\d+)?/g,(mm)=>{ params.push(mm); return ''; });
+  return {key,params};
+}
+async function handleUnknown(line, ctx, token){
+  const {key,params}=templatize(line);
+  if(project.defs[key]){
+    const body=project.defs[key];
+    for(let bl of body){
+      let s=bl;
+      params.forEach((p,idx)=>{ s=s.split('$'+(idx+1)).join(p); });
+      if(s.trim()) await runCommand(s.trim(), ctx, token);
+    }
+    return;
+  }
+  // ask user to define
+  const bodyText=await askDefine(line);
+  if(bodyText==null){ throw new Error('Unknown command: '+line); }
+  const body=bodyText.split('\n').map(x=>x.replace(/\/\/.*$/,'').trim()).filter(Boolean);
+  project.defs[key]=body; saveProject();
+  for(let bl of body){
+    let s=bl; params.forEach((p,idx)=>{ s=s.split('$'+(idx+1)).join(p); });
+    if(s.trim()) await runCommand(s.trim(), ctx, token);
+  }
+}
+function askDefine(trigger){
+  return new Promise((resolve)=>{
+    defineResolver=resolve;
+    document.getElementById('def_trigger').textContent=trigger;
+    document.getElementById('def_body').value='';
+    document.getElementById('defineModal').classList.remove('hidden');
+  });
+}
+EC.saveDefine=function(){
+  const body=document.getElementById('def_body').value;
+  document.getElementById('defineModal').classList.add('hidden');
+  if(defineResolver){ defineResolver(body); defineResolver=null; }
+};
+EC.cancelDefine=function(){
+  document.getElementById('defineModal').classList.add('hidden');
+  if(defineResolver){ defineResolver(null); defineResolver=null; }
+};
+
+/* =====================================================================
+   PAINT EDITOR
+   ===================================================================== */
+EC.paint=(function(){
+  const SW=400, SH=300;
+  let canvas,ctx,tool='brush',color='#4b6ef5',size=8;
+  let drawing=false,startX=0,startY=0,snapshot=null;
+  let undoStack=[],redoStack=[],editingSpriteId=null;
+  const palette=['#000000','#ffffff','#e6432e','#f59e0b','#fbe14b','#25a06b','#2ea3f2','#4b6ef5','#7c4bf5','#ee5aa8','#8b5a2b','#9aa0b4'];
+
+  function init(){
+    canvas=document.getElementById('paintCanvas'); ctx=canvas.getContext('2d');
+    const sw=document.getElementById('swatches'); sw.innerHTML='';
+    palette.forEach(c=>{ const d=document.createElement('div'); d.className='swatch'; d.style.background=c;
+      d.onclick=()=>{ setColor(c); document.getElementById('paintColor').value=c; }; sw.appendChild(d); });
+    document.getElementById('paintColor').oninput=e=>setColor(e.target.value);
+    document.getElementById('paintSize').oninput=e=>{ size=+e.target.value; };
+    canvas.addEventListener('pointerdown',down);
+    canvas.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',up);
+  }
+  function setColor(c){ color=c; document.querySelectorAll('#swatches .swatch').forEach(s=>s.classList.toggle('on', rgbEq(s.style.background,c))); }
+  function rgbEq(a,b){ return a.replace(/\s/g,'').toLowerCase()===b.toLowerCase(); }
+  function setTool(t){ tool=t; ['brush','eraser','rect','circle','triangle'].forEach(x=>{
+      const b=document.getElementById('tool-'+x); if(b) b.classList.toggle('on',x===t); }); }
+
+  function pushUndo(){ undoStack.push(ctx.getImageData(0,0,SW,SH)); if(undoStack.length>40)undoStack.shift(); redoStack=[]; }
+  function undo(){ if(!undoStack.length) return; redoStack.push(ctx.getImageData(0,0,SW,SH)); ctx.putImageData(undoStack.pop(),0,0); }
+  function redo(){ if(!redoStack.length) return; undoStack.push(ctx.getImageData(0,0,SW,SH)); ctx.putImageData(redoStack.pop(),0,0); }
+  function clear(){ pushUndo(); ctx.clearRect(0,0,SW,SH); }
+
+  function pos(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*SW/r.width, y:(e.clientY-r.top)*SH/r.height}; }
+  function down(e){ drawing=true; const p=pos(e); startX=p.x; startY=p.y; pushUndo();
+    if(tool==='brush'||tool==='eraser'){ strokeDot(p.x,p.y); }
+    else { snapshot=ctx.getImageData(0,0,SW,SH); } canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId); }
+  function move(e){ if(!drawing) return; const p=pos(e);
+    if(tool==='brush'||tool==='eraser'){ strokeLine(startX,startY,p.x,p.y); startX=p.x; startY=p.y; }
+    else { ctx.putImageData(snapshot,0,0); drawShape(startX,startY,p.x,p.y); } }
+  function up(e){ if(!drawing) return; drawing=false; if(!(tool==='brush'||tool==='eraser')){ /* committed */ } }
+
+  function strokeDot(x,y){ ctx.globalCompositeOperation = tool==='eraser'?'destination-out':'source-over';
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y,size/2,0,7); ctx.fill(); ctx.globalCompositeOperation='source-over'; }
+  function strokeLine(x0,y0,x1,y1){ ctx.globalCompositeOperation = tool==='eraser'?'destination-out':'source-over';
+    ctx.strokeStyle=color; ctx.lineWidth=size; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); ctx.globalCompositeOperation='source-over'; }
+  function drawShape(x0,y0,x1,y1){ ctx.fillStyle=color;
+    if(tool==='rect'){ ctx.fillRect(Math.min(x0,x1),Math.min(y0,y1),Math.abs(x1-x0),Math.abs(y1-y0)); }
+    else if(tool==='circle'){ ctx.beginPath(); ctx.ellipse((x0+x1)/2,(y0+y1)/2,Math.abs(x1-x0)/2,Math.abs(y1-y0)/2,0,0,7); ctx.fill(); }
+    else if(tool==='triangle'){ ctx.beginPath(); ctx.moveTo((x0+x1)/2,y0); ctx.lineTo(x0,y1); ctx.lineTo(x1,y1); ctx.closePath(); ctx.fill(); } }
+
+  function open(spriteId){
+    editingSpriteId=spriteId||null; undoStack=[]; redoStack=[];
+    document.getElementById('paintModal').classList.remove('hidden');
+    if(!canvas) init();
+    ctx.clearRect(0,0,SW,SH);
+    document.getElementById('paintTitle').textContent = spriteId ? 'Edit costume' : 'Paint a new sprite';
+    if(spriteId){
+      const s=project.sprites.find(x=>x.id===spriteId);
+      if(s&&s.costume){ const img=new Image(); img.onload=()=>{
+        const sc=Math.min(SW/img.width,SH/img.height,1); const w=img.width*sc,h=img.height*sc;
+        ctx.drawImage(img,(SW-w)/2,(SH-h)/2,w,h); }; img.src=s.costume; }
+    }
+    setColor(color); setTool('brush');
+  }
+  function trimmed(){
+    const d=ctx.getImageData(0,0,SW,SH).data;
+    let minX=SW,minY=SH,maxX=0,maxY=0,found=false;
+    for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){ if(d[(y*SW+x)*4+3]>10){ found=true;
+      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; } }
+    if(!found) return {url:null};
+    const w=maxX-minX+1,h=maxY-minY+1;
+    const oc=document.createElement('canvas'); oc.width=w; oc.height=h;
+    oc.getContext('2d').drawImage(canvas,minX,minY,w,h,0,0,w,h);
+    return {url:oc.toDataURL('image/png'),w,h};
+  }
+  async function save(){
+    const t=trimmed();
+    if(!t.url){ alert('Nothing drawn yet!'); return; }
+    if(editingSpriteId){
+      const s=project.sprites.find(x=>x.id===editingSpriteId);
+      if(s){ s.costume=t.url; s.nw=t.w; s.nh=t.h; if(s.imgEl) s.imgEl.src=t.url; }
+      renderAll(); saveProject();
+    }else{
+      await EC.addSpriteFromData('Painted', t.url);
+    }
+    document.getElementById('paintModal').classList.add('hidden');
+  }
+  return {open,setTool,undo,redo,clear,save,
+    // test hooks
+    _shape:(t,x0,y0,x1,y1,c)=>{ if(c)setColor(c); pushUndo(); const old=tool; tool=t; drawShape(x0,y0,x1,y1); tool=old; },
+    _ctx:()=>ctx};
+})();
+
+/* =====================================================================
+   HELP
+   ===================================================================== */
+EC.help=function(){
+  logMsg('Commands: go to x N y N • move N steps • turn right N [degrees] • turn left N [degrees] • point in direction N • glide to x N y N in N seconds • bounce','g');
+  logMsg('say "..." [for N seconds] • show • hide • set size to N • change x/y by N','g');
+  logMsg('Control: when go clicked • repeat N…end • forever…end • if <cond>…else…end • while <cond>…end • wait N seconds • wait until <cond> • stop','g');
+  logMsg('Data: set (v) to EXPR • change (v) by N • hide (v) / show (v) • add X to [L] • item N of [L] • length of [L] • select sprite NAME','g');
+  logMsg('Mouse: go to mouse pointer • point towards mouse pointer • use "mouse x" / "mouse y" in expressions (e.g. set x to mouse x)','g');
+  logMsg('Sensing (inside < >): touching edge/left/right/top/bottom • touching NAME • touching mouse pointer • touching colour red/#hex • mouse down','g');
+};
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* rAF keeps visuals fresh */
+(function loop(){ positionSprites(); requestAnimationFrame(loop); })();
+
+/* =====================================================================
+   TEST HOOKS
+   ===================================================================== */
+window.__ec = {
+  signup:doSignup, login:doLogin, validateSignup,
+  addSprite: (name,costume,code)=>EC.addSpriteFromData(name,costume,code),
+  setCode:(id,code)=>{ const s=project.sprites.find(x=>x.id===id); if(s){s.code=code; if(id===selectedSpriteId)document.getElementById('editor').value=code;} saveProject(); },
+  select:(id)=>EC.selectSprite(id),
+  run:()=>EC.run(), stop:()=>EC.stop(),
+  getSprite:(id)=>{ const s=project.sprites.find(x=>x.id===id); return s?{id:s.id,name:s.name,x:s.x,y:s.y,dir:s.dir,size:s.size,visible:s.visible,nw:s.nw,nh:s.nh}:null; },
+  sprites:()=>project.sprites.map(s=>s.id),
+  state:()=>project,
+  vars:()=>project.variables, lists:()=>project.lists,
+  lastError:()=>lastError, running:()=>running,
+  makeVar:(n,v)=>{project.variables[n]=v==null?0:v; renderData(); renderMonitors();},
+  makeList:(n)=>{project.lists[n]=[]; renderData(); renderMonitors();},
+  monitorNames:()=>[...document.querySelectorAll('#stage .monitor')].map(m=>m.dataset.name),
+  setBackdrop:(url)=>{project.backdrop=url; _bdImg=new Image(); _bdImg.src=url; renderStage();},
+  paint:EC.paint,
+  parse:(code)=>parseProgram(code),
+  _templatize:(l)=>templatize(l),
+  _setMouse:(x,y,down)=>{ mouseX=x; mouseY=y; if(down!=null) mouseDown=down; showCoords(x,y); },
+  evalCond:(c)=>{ const s=currentSprite(); return evalBool(stripAngle(c),{sprite:s}); },
+  scale:()=>window.__ecScale
+};
+
+/* boot */
+EC.showTab('login');
+initFirebase();
+window.addEventListener('load', relayout);
+setTimeout(relayout,150);
+</script>
+</body>
+</html>
