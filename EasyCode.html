@@ -1070,7 +1070,22 @@ function parseColor(str){
 const STOP={__stop:true};
 function rad(d){return d*Math.PI/180;}
 function wait(sec){ return new Promise(r=>setTimeout(r, Math.max(0,sec*1000))); }
-function tick(){ return new Promise(r=>setTimeout(r, LOOP_DELAY)); }
+/* Shared frame clock: every running loop advances exactly one iteration per
+   frame (Scratch-style lockstep). This keeps parallel scripts in sync so a
+   fast-moving sprite can't tunnel past a collision check in another script. */
+let frameWaiters=[]; let frameTimer=null; let _frame=0;
+function tick(){ return new Promise(r=>frameWaiters.push(r)); }
+function startFrames(){
+  if(frameTimer) return;
+  const step=()=>{
+    _frame++;
+    const w=frameWaiters; frameWaiters=[];
+    for(const r of w) r();               // release all loops for this frame
+    if(!running && frameWaiters.length===0){ frameTimer=null; return; }
+    frameTimer=setTimeout(step, LOOP_DELAY);
+  };
+  frameTimer=setTimeout(step, LOOP_DELAY);
+}
 function varSetLive(){ renderData(); }
 
 EC.run = async function(){
@@ -1079,6 +1094,7 @@ EC.run = async function(){
   clearConsole(); lastError=''; running=true; const token=++runToken;
   if(project.backdrop){ _bdImg=new Image(); _bdImg.src=project.backdrop; }
   logMsg('▶ Running…','g');
+  _frame=0; startFrames();
   // compile all sprites first (so parse errors show up before starting)
   const progs=[];
   for(const sp of project.sprites){
@@ -1093,7 +1109,7 @@ EC.run = async function(){
     running=false;
   }
 };
-EC.stop = function(){ running=false; runToken++; logMsg('■ Stopped.'); };
+EC.stop = function(){ running=false; runToken++; const w=frameWaiters; frameWaiters=[]; for(const r of w) r(); logMsg('■ Stopped.'); };
 
 async function runSpriteProgram(sprite, prog, token){
   const setupCtx={sprite};
@@ -1155,6 +1171,7 @@ async function runCommand(line, ctx, token){
     const left=/^(left|ccw|counter|↺)/i.test(m[1]); sp.dir += left ? -amt : amt; }
   else if(m=line.match(/^turn\s+(.+)$/i)){ sp.dir += num(m[1].replace(/\s+degrees?$/i,'').trim()); }
   else if(m=line.match(/^glide to x (.+) y (.+) in (.+?) seconds?$/i)){ await glide(sp,num(m[1]),num(m[2]),num(m[3]),token); }
+  else if(m=line.match(/^bounce off (.+)$/i)){ bounceSprite(sp, m[1].trim()); }
   else if(low==='bounce' || low==='if on edge bounce'){ bounceSprite(sp); }
 
   // ---- LOOKS ----
@@ -1200,14 +1217,41 @@ async function glide(sp,tx,ty,secs,token){
     sp.x=sx+(tx-sx)*k/steps; sp.y=sy+(ty-sy)*k/steps; positionSprites(); await wait(secs/steps);
   }
 }
-function bounceSprite(sp){
+function bounceSprite(sp, offName){
   const b=bbox(sp);
   let vx=Math.sin(rad(sp.dir)), vy=Math.cos(rad(sp.dir));
   let bounced=false;
+  // 1) bounce off the stage edges
   if(b.left<=-STAGE_W/2){ vx=Math.abs(vx); bounced=true; sp.x=-STAGE_W/2+b.w/2; }
   if(b.right>=STAGE_W/2){ vx=-Math.abs(vx); bounced=true; sp.x=STAGE_W/2-b.w/2; }
   if(b.top>=STAGE_H/2){ vy=-Math.abs(vy); bounced=true; sp.y=STAGE_H/2-b.h/2; }
   if(b.bottom<=-STAGE_H/2){ vy=Math.abs(vy); bounced=true; sp.y=-STAGE_H/2+b.h/2; }
+  // 2) if not off an edge, bounce off another sprite it's overlapping.
+  //    Skip the first couple of frames so all sprites finish positioning first
+  //    (otherwise everything overlaps at the default (0,0) before "go to" runs).
+  if(!bounced && _frame>=2){
+    let targets = project.sprites.filter(o=>o.id!==sp.id && o.visible && overlap(b,bbox(o)));
+    if(offName){ const only=findSprite(offName); targets = only ? targets.filter(o=>o.id===only.id) : []; }
+    // pick the sprite with the greatest overlap area
+    let best=null, bestArea=-1;
+    for(const o of targets){ const ob=bbox(o);
+      const ox=Math.min(b.right,ob.right)-Math.max(b.left,ob.left);
+      const oy=Math.min(b.top,ob.top)-Math.max(b.bottom,ob.bottom);
+      const area=Math.max(0,ox)*Math.max(0,oy);
+      if(area>bestArea){ bestArea=area; best={o,ob,ox,oy}; } }
+    if(best){
+      const {o,ox,oy}=best;
+      const dx=sp.x-o.x, dy=sp.y-o.y;
+      if(ox<=oy){ // shallow axis is horizontal -> reflect x, push out sideways by the overlap only
+        const nx = dx!==0 ? Math.sign(dx) : (vx>0?-1:1);
+        vx = Math.abs(vx)*nx; sp.x += (ox+0.5)*nx;
+      } else {    // shallow axis is vertical -> reflect y, push out vertically by the overlap only
+        const ny = dy!==0 ? Math.sign(dy) : (vy>0?-1:1);
+        vy = Math.abs(vy)*ny; sp.y += (oy+0.5)*ny;
+      }
+      bounced=true;
+    }
+  }
   if(bounced){ sp.dir=Math.atan2(vx,vy)*180/Math.PI; }
 }
 
